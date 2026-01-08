@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amthi 2D Agent</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 10px; display: flex; justify-content: center; }
+        .app-card { background: white; width: 100%; max-width: 400px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        .total-section { background: #f9f9f9; padding: 15px; text-align: right; font-weight: bold; font-size: 18px; color: #e74c3c; border-top: 2px solid #eee; }
+    </style>
+</head>
+<body>
+
+<div class="app-card">
+    <div class="header"><h2>Amthi 2D App</h2></div>
+    <div class="content">
+        <input type="text" id="uName" placeholder="ထိုးသူအမည်">
+        <input type="number" id="uNum" placeholder="ဂဏန်း">
+        <input type="number" id="uAmt" placeholder="ထိုးကြေး">
+        <button onclick="saveData()">စာရင်းသွင်းမည်</button>
+
+        <table>
+            <thead><tr><th>အမည်</th><th>ဂဏန်း</th><th>ကြေး</th></tr></thead>
+            <tbody id="dataList"></tbody>
+        </table>
+    </div>
+    <div class="total-section">စုစုပေါင်း: <span id="totalAmt">0</span> ကျပ်</div>
+</div>
+
+<script>
+    const firebaseConfig = { databaseURL: "https://amthi-2d-default-rtdb.asia-southeast1.firebasedatabase.app/" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function saveData() {
+        const name = document.getElementById('uName').value;
+        const num = document.getElementById('uNum').value;
+        const amt = document.getElementById('uAmt').value;
+        if(name && num && amt) {
+            db.ref('bets').push({ name: name, number: num, amount: parseInt(amt) });
+            document.getElementById('uNum').value = "";
+            document.getElementById('uAmt').value = "";
+        }
+    }
+
+    db.ref('bets').on('value', (snap) => {
+        const list = document.getElementById('dataList');
+        const totalDisp = document.getElementById('totalAmt');
+        list.innerHTML = ""; let total = 0;
+        snap.forEach((child) => {
+            const val = child.val(); total += val.amount;
+            list.innerHTML += `<tr><td>${val.name}</td><td>${val.number}</td><td>${val.amount}</td></tr>`;
+        });
+        totalDisp.innerText = total.toLocaleString();
+    });
+</script>
+</body>
+</html>
