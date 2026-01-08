@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amthi 2D Agent Pro</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+
+    <style>
+        :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --info: #3498db; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 10px; }
+        .app-container { max-width: 450px; margin: auto; background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: var(--primary); color: white; padding: 15px; text-align: center; }
+        .content { padding: 20px; }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; margin-bottom: 10px; font-size: 16px; }
+        .btn-save { background: var(--success); }
+        .btn-excel { background: var(--info); }
+        .btn-delete { background: var(--danger); margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border-bottom: 1px solid #eee; padding: 12px; text-align: center; }
+        th { background: #f8f9fa; }
+        .total-box { padding: 15px; background: #fff3cd; font-weight: bold; text-align: right; border-radius: 8px; margin-top: 10px; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header"><h2>Amthi 2D Agent Pro</h2></div>
+    
+    <div class="content">
+        <input type="text" id="custName" placeholder="ထိုးသူအမည်">
+        <input type="number" id="betNum" placeholder="ဂဏန်း">
+        <input type="number" id="betAmt" placeholder="ထိုးကြေး">
+        <button class="btn btn-save" onclick="saveData()">စာရင်းသွင်းမည်</button>
+
+        <button class="btn btn-excel" onclick="exportToExcel()">Excel ဖိုင်ထုတ်မည် (ဒိုင်အပ်ရန်)</button>
+
+        <table id="data-table">
+            <thead>
+                <tr><th>အမည်</th><th>ဂဏန်း</th><th>ကြေး</th></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+
+        <div class="total-box">စုစုပေါင်း: <span id="totalDisplay">0</span> ကျပ်</div>
+
+        <button class="btn btn-delete" onclick="clearDataWithPass()">တစ်နေ့တာစာရင်းဖျက်မည်</button>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = { databaseURL: "https://amthi-2d-default-rtdb.asia-southeast1.firebasedatabase.app/" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // စာရင်းသွင်းရန်
+    function saveData() {
+        const name = document.getElementById('custName').value;
+        const num = document.getElementById('betNum').value;
+        const amt = document.getElementById('betAmt').value;
+        if(name && num && amt) {
+            db.ref('bets').push({ name: name, number: num, amount: parseInt(amt) });
+            document.getElementById('betNum').value = "";
+            document.getElementById('betAmt').value = "";
+        }
+    }
+
+    // Database မှ စာရင်းများကို ပြသရန်
+    db.ref('bets').on('value', (snapshot) => {
+        const tableBody = document.getElementById('tableBody');
+        const totalDisplay = document.getElementById('totalDisplay');
+        tableBody.innerHTML = ""; let total = 0;
+        snapshot.forEach((child) => {
+            const data = child.val(); total += data.amount;
+            tableBody.innerHTML += `<tr><td>${data.name}</td><td>${data.number}</td><td>${data.amount}</td></tr>`;
+        });
+        totalDisplay.innerText = total.toLocaleString();
+    });
+
+    // Excel ထုတ်ရန်
+    function exportToExcel() {
+        const table = document.getElementById("data-table");
+        const wb = XLSX.utils.table_to_book(table, {sheet: "2D စာရင်း"});
+        XLSX.writeFile(wb, "2D_Daily_Report.xlsx");
+    }
+
+    // Password ဖြင့် စာရင်းဖျက်ရန်
+    function clearDataWithPass() {
+        const pass = prompt("စာရင်းဖျက်ရန် Password ရိုက်ထည့်ပါ:");
+        if (pass === "1234") { // <--- ဒီနေရာမှာ ကြိုက်တဲ့ Password ပြောင်းနိုင်ပါတယ်
+            if(confirm("တစ်နေ့တာစာရင်းအားလုံး ပျက်သွားပါလိမ့်မည်။ သေချာပါသလား?")) {
+                db.ref('bets').remove();
+                alert("စာရင်းများအားလုံးကို ဖျက်လိုက်ပါပြီ။");
+            }
+        } else {
+            alert("Password မှားယွင်းနေပါသည်။");
+        }
+    }
+</script>
+
+</body>
+</html>
